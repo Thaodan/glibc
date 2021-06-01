@@ -260,7 +260,34 @@ mq_notify (mqd_t mqdes, const struct sigevent *notification)
       if (data.attr == NULL)
 	return -1;
 
-      __pthread_attr_copy (data.attr, notification->sigev_notify_attributes);
+      memcpy (data.attr, notification->sigev_notify_attributes,
+	     sizeof (pthread_attr_t));
+
+      struct pthread_attr *source =
+	  (struct pthread_attr *) (notification->sigev_notify_attributes);
+      struct pthread_attr *target = (struct pthread_attr *) (data.attr);
+      cpu_set_t *newp;
+      cpu_set_t *cpuset = source->cpuset;
+      size_t cpusetsize = source->cpusetsize;
+
+      /* alloc a new memory for cpuset to avoid use after free */
+      if (cpuset != NULL && cpusetsize > 0)
+	{
+	  newp = (cpu_set_t *) malloc (cpusetsize);
+	  if (newp == NULL)
+	    {
+	      free(data.attr);
+	      return -1;
+	    }
+
+	  memcpy (newp, cpuset, cpusetsize);
+	  target->cpuset = newp;
+	}
+      else
+	{
+	  target->cpuset = NULL;
+	  target->cpusetsize = 0;
+	}
     }
 
   /* Construct the new request.  */
@@ -273,7 +300,7 @@ mq_notify (mqd_t mqdes, const struct sigevent *notification)
   int retval = INLINE_SYSCALL (mq_notify, 2, mqdes, &se);
 
   /* If it failed, free the allocated memory.  */
-  if (__glibc_unlikely (retval != 0))
+  if (retval != 0 && data.attr != NULL)
     {
       pthread_attr_destroy (data.attr);
       free (data.attr);
