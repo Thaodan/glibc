@@ -626,13 +626,22 @@ elf_machine_rela (struct link_map *map, const Elf32_Rela *reloc,
 }
 # endif
 
+union arm_unaligned_data {
+  Elf32_Addr l_addr;
+} __attribute__ ((packed));
+
 auto inline void
 __attribute__ ((always_inline))
 elf_machine_rel_relative (Elf32_Addr l_addr, const Elf32_Rel *reloc,
 			  void *const reloc_addr_arg)
 {
-  Elf32_Addr *const reloc_addr = reloc_addr_arg;
-  *reloc_addr += l_addr;
+  if (((long)reloc_addr_arg) & 0x3) {
+    union arm_unaligned_data *const lpdata = reloc_addr_arg;
+    lpdata->l_addr += l_addr;
+  } else {
+    Elf32_Addr *const reloc_addr = reloc_addr_arg;
+    *reloc_addr += l_addr;
+  }
 }
 
 # ifndef RTLD_BOOTSTRAP
