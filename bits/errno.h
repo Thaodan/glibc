@@ -25,26 +25,52 @@
 # error "Never include <bits/errno.h> directly; use <errno.h> instead."
 #endif
 
-#error "Generic bits/errno.h included -- port is incomplete."
+#ifdef _ERRNO_H
 
-/* Authors of new ports of the GNU C Library must override this file
-   with their own bits/errno.h in an appropriate subdirectory of
-   sysdeps/.  Its function is to define all of the error constants
-   from C2011 and POSIX.1-2008, with values appropriate to the
-   operating system, and any additional OS-specific error constants.
+# include <linux/errno.h>
 
-   C2011 requires all error constants to be object-like macros that
-   expand to "integer constant expressions with type int, positive
-   values, and suitable for use in #if directives".  Moreover, all of
-   their names must begin with a capital E, followed immediately by
-   either another capital letter, or a digit.  It is OK to define
-   macros that are not error constants, but only in the implementation
-   namespace.
+/* Older Linux headers do not define these constants.  */
+# ifndef ENOTSUP
+#   define ENOTSUP EOPNOTSUPP
+# endif
 
-   errno.h is sometimes included from assembly language.  Therefore,
-   when __ASSEMBLER__ is defined, bits/errno.h may only define macros;
-   it may not make any other kind of C declaration or definition.
-   Also, the error constants should, if at all possible, expand to
-   simple decimal or hexadecimal numbers.  */
+/* Older Linux versions also had no ECANCELED error code.  */
+# ifndef ECANCELED
+#  define ECANCELED	125
+# endif
+
+/* Support for error codes to support robust mutexes was added later, too.  */
+# ifndef EOWNERDEAD
+#  define EOWNERDEAD		130
+#  define ENOTRECOVERABLE	131
+# endif
+
+# ifndef ERFKILL
+#  define ERFKILL		132
+# endif
+
+# ifndef EHWPOISON
+#  define EHWPOISON		133
+# endif
+
+# ifndef __ASSEMBLER__
+/* Function to get address of global `errno' variable.  */
+extern int *__errno_location (void) __THROW __attribute__ ((__const__));
+
+#  if !defined _LIBC || defined _LIBC_REENTRANT
+/* When using threads, errno is a per-thread value.  */
+#   define errno (*__errno_location ())
+#  endif
+# endif /* !__ASSEMBLER__ */
+#endif /* _ERRNO_H */
+
+#if !defined _ERRNO_H && defined __need_Emath
+/* This is ugly but the kernel header is not clean enough.  We must
+   define only the values EDOM, EILSEQ and ERANGE in case __need_Emath is
+   defined.  */
+# define EDOM	33	/* Math argument out of domain of function.  */
+# define EILSEQ	84	/* Illegal byte sequence.  */
+# define ERANGE	34	/* Math result not representable.  */
+#endif /* !_ERRNO_H && __need_Emath */
 
 #endif /* bits/errno.h.  */
