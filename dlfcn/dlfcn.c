@@ -23,16 +23,9 @@ int __dlfcn_argc attribute_hidden;
 char **__dlfcn_argv attribute_hidden;
 
 
-static void
+static void __attribute ((constructor))
 init (int argc, char *argv[])
 {
   __dlfcn_argc = argc;
   __dlfcn_argv = argv;
 }
-
-static void (*const init_array []) (int argc, char *argv[])
-     __attribute__ ((section (".init_array"), aligned (sizeof (void *))))
-     __attribute_used__ =
-{
-  init
-};
