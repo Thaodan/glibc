@@ -589,6 +589,8 @@ struct rtld_global_ro
      platforms.  */
   EXTERN uint64_t _dl_hwcap2;
 
+  EXTERN int _dl_no_default_dirs;
+
 #ifdef SHARED
   /* We add a function table to _rtld_global which is then used to
      call the function instead of going through the PLT.  The result

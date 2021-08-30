@@ -1164,6 +1164,15 @@ dl_main (const ElfW(Phdr) *phdr,
 	    --_dl_argc;
 	    ++_dl_argv;
 	  }
+	else if (! strcmp (_dl_argv[1], "--nodefaultdirs")
+		 && _dl_argc > 2)
+	  {
+	    GLRO(dl_no_default_dirs) = 1;
+
+	    ++_dl_skip_args;
+	    --_dl_argc;
+	    ++_dl_argv;
+	  }
 	else if (! strcmp (_dl_argv[1], "--library-path")
 		 && _dl_argc > 2)
 	  {
@@ -1220,6 +1229,7 @@ of this helper program; chances are you did not intend to run this program.\n\
   --list                list all dependencies and how they are resolved\n\
   --verify              verify that given object really is a dynamically linked\n\
 			object we can handle\n\
+  --nodefaultdirs       Do not search from default directories or cache\n\
   --inhibit-cache       Do not use " LD_SO_CACHE "\n\
   --library-path PATH   use given PATH instead of content of the environment\n\
 			variable LD_LIBRARY_PATH\n\
