@@ -184,6 +184,7 @@ setting environment variables (which would be inherited by subprocesses).\n\
   --list                list all dependencies and how they are resolved\n\
   --verify              verify that given object really is a dynamically linked\n\
                         object we can handle\n\
+  --nodefaultdirs       Do not search from default directories or cache\n\
   --inhibit-cache       Do not use " LD_SO_CACHE "\n\
   --library-path PATH   use given PATH instead of content of the environment\n\
                         variable LD_LIBRARY_PATH\n\

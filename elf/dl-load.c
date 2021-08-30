@@ -2065,7 +2065,8 @@ _dl_map_new_object (struct link_map *loader, const char *name,
 
 	      /* If the loader has the DF_1_NODEFLIB flag set we must not
 		 use a cache entry from any of these directories.  */
-	      if (__glibc_unlikely (l->l_flags_1 & DF_1_NODEFLIB))
+	      if (__glibc_unlikely (l->l_flags_1 & DF_1_NODEFLIB) ||
+                       GLRO(dl_no_default_dirs))
 		{
 		  const char *dirp = system_dirs;
 		  unsigned int cnt = 0;
@@ -2104,7 +2105,8 @@ _dl_map_new_object (struct link_map *loader, const char *name,
       /* Finally, try the default path.  */
       if (fd == -1
 	  && ((l = loader ?: GL(dl_ns)[nsid]._ns_loaded) == NULL
-	      || __glibc_likely (!(l->l_flags_1 & DF_1_NODEFLIB)))
+	      || __glibc_likely (!(l->l_flags_1 & DF_1_NODEFLIB)) ||
+		GLRO(dl_no_default_dirs))
 	  && __rtld_search_dirs.dirs != (void *) -1)
 	fd = open_path (name, namelen, mode, &__rtld_search_dirs,
 			&realname, &fb, l, LA_SER_DEFAULT, &found_other_class);
@@ -2295,7 +2297,7 @@ _dl_rtld_di_serinfo (struct link_map *loader, Dl_serinfo *si, bool counting)
      a way to indicate that in the results for Dl_serinfo.  */
 
   /* Finally, try the default path.  */
-  if (!(loader->l_flags_1 & DF_1_NODEFLIB))
+  if (!((loader->l_flags_1 & DF_1_NODEFLIB) || GLRO(dl_no_default_dirs)))
     add_path (&p, &__rtld_search_dirs, XXX_default);
 
   if (counting)
