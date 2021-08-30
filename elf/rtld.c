@@ -1399,6 +1399,14 @@ dl_main (const ElfW(Phdr) *phdr,
 	    _dl_argc -= 2;
 	    _dl_argv += 2;
 	  }
+	else if (! strcmp (_dl_argv[1], "--rpath-prefix")
+		 && _dl_argc > 2)
+	  {
+	    GLRO(dl_rpath_prefix) = _dl_argv[2];
+
+	    _dl_argc -= 2;
+	    _dl_argv += 2;
+	  }
 	else if (! strcmp (_dl_argv[1], "--audit") && _dl_argc > 2)
 	  {
 	    audit_list_add_string (&state.audit_list, _dl_argv[2]);
