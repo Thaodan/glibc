@@ -443,7 +443,8 @@ static size_t max_dirnamelen;
 
 static struct r_search_path_elem **
 fillin_rpath (char *rpath, struct r_search_path_elem **result, const char *sep,
-	      const char *what, const char *where, struct link_map *l)
+	      const char *what, const char *where, struct link_map *l, 
+	      const char *rpath_prefix)
 {
   char *cp;
   size_t nelems = 0;
@@ -483,9 +484,24 @@ fillin_rpath (char *rpath, struct r_search_path_elem **result, const char *sep,
 	}
 
       /* See if this directory is already known.  */
-      for (dirp = GL(dl_all_dirs); dirp != NULL; dirp = dirp->next)
-	if (dirp->dirnamelen == len && memcmp (cp, dirp->dirname, len) == 0)
-	  break;
+      if (__builtin_expect (rpath_prefix != NULL, 0)
+	  && (memcmp (cp, "/home/", 6) != 0))
+	{
+	  /* has rpath_prefix */
+	  size_t rpath_prefix_len = strlen (rpath_prefix);
+
+	  for (dirp = GL(dl_all_dirs); dirp != NULL; dirp = dirp->next)
+	    if (dirp->dirnamelen == (rpath_prefix_len+len) &&
+		(memcmp (cp, rpath_prefix, rpath_prefix_len) == 0) &&
+		(memcmp (cp+rpath_prefix_len, dirp->dirname, len) == 0))
+	      break;
+	}
+      else
+	{
+	  for (dirp = GL(dl_all_dirs); dirp != NULL; dirp = dirp->next)
+	    if (dirp->dirnamelen == len && memcmp (cp, dirp->dirname, len) == 0)
+	      break;
+	}
 
       if (dirp != NULL)
 	{
@@ -503,22 +519,44 @@ fillin_rpath (char *rpath, struct r_search_path_elem **result, const char *sep,
 	  size_t cnt;
 	  enum r_dir_status init_val;
 	  size_t where_len = where ? strlen (where) + 1 : 0;
+	  size_t rpath_prefix_len = 0;
+
+	  if (__builtin_expect (rpath_prefix != NULL, 0)
+	      && (memcmp (cp, "/home/", 6) != 0)
+	      && !__libc_enable_secure)
+	    {
+		rpath_prefix_len = strlen (rpath_prefix);
+		if (*cp != '/') rpath_prefix_len++; /* need to add a '/' */
+	    }
 
 	  /* It's a new directory.  Create an entry and add it.  */
 	  dirp = (struct r_search_path_elem *)
 	    malloc (sizeof (*dirp) + ncapstr * sizeof (enum r_dir_status)
-		    + where_len + len + 1);
+		    + where_len + rpath_prefix_len + len + 1);
 	  if (dirp == NULL)
 	    _dl_signal_error (ENOMEM, NULL, NULL,
 			      N_("cannot create cache for search path"));
 
 	  dirp->dirname = ((char *) dirp + sizeof (*dirp)
 			   + ncapstr * sizeof (enum r_dir_status));
-	  *((char *) __mempcpy ((char *) dirp->dirname, cp, len)) = '\0';
-	  dirp->dirnamelen = len;
+	  if (rpath_prefix_len == 0)
+	    {
+		  *((char *) __mempcpy ((char *) dirp->dirname, cp, len)) = '\0';
+	    }
+	  else
+	    {
+		char *prefixend;
 
-	  if (len > max_dirnamelen)
-	    max_dirnamelen = len;
+		prefixend = (char *) __mempcpy ((char *) dirp->dirname,
+				rpath_prefix, rpath_prefix_len);
+		if (*cp != '/')
+		  prefixend[-1] = '/'; /* replace \0 */
+		*((char *) __mempcpy (prefixend, cp, len)) = '\0';
+	    }
+	  dirp->dirnamelen = len + rpath_prefix_len;
+
+	  if ((len + rpath_prefix_len) > max_dirnamelen)
+	    max_dirnamelen = len + rpath_prefix_len;
 
 	  /* We have to make sure all the relative directories are
 	     never ignored.  The current directory might change and
@@ -529,7 +567,8 @@ fillin_rpath (char *rpath, struct r_search_path_elem **result, const char *sep,
 
 	  dirp->what = what;
 	  if (__glibc_likely (where != NULL))
-	    dirp->where = memcpy ((char *) dirp + sizeof (*dirp) + len + 1
+	    dirp->where = memcpy ((char *) dirp + sizeof (*dirp)
+				  + rpath_prefix_len + len + 1
 				  + (ncapstr * sizeof (enum r_dir_status)),
 				  where, where_len);
 	  else
@@ -628,7 +667,7 @@ decompose_rpath (struct r_search_path_struct *sps,
       _dl_signal_error (ENOMEM, NULL, NULL, errstring);
     }
 
-  fillin_rpath (copy, result, ":", what, where, l);
+  fillin_rpath (copy, result, ":", what, where, l, GLRO(dl_rpath_prefix));
 
   /* Free the copied RPATH string.  `fillin_rpath' make own copies if
      necessary.  */
@@ -813,7 +852,7 @@ _dl_init_paths (const char *llp)
 	}
 
       (void) fillin_rpath (llp_tmp, env_path_list.dirs, ":;",
-			   "LD_LIBRARY_PATH", NULL, l);
+			   "LD_LIBRARY_PATH", NULL, l, NULL/*no prefix*/);
 
       if (env_path_list.dirs[0] == NULL)
 	{

@@ -1192,6 +1192,15 @@ dl_main (const ElfW(Phdr) *phdr,
 	    _dl_argc -= 2;
 	    _dl_argv += 2;
 	  }
+	else if (! strcmp (_dl_argv[1], "--rpath-prefix")
+		 && _dl_argc > 2)
+	  {
+	    GLRO(dl_rpath_prefix) = _dl_argv[2];
+
+	    _dl_skip_args += 2;
+	    _dl_argc -= 2;
+	    _dl_argv += 2;
+	  }
 	else if (! strcmp (_dl_argv[1], "--audit") && _dl_argc > 2)
 	  {
 	    process_dl_audit (_dl_argv[2]);
@@ -1242,6 +1251,8 @@ of this helper program; chances are you did not intend to run this program.\n\
   --inhibit-cache       Do not use " LD_SO_CACHE "\n\
   --library-path PATH   use given PATH instead of content of the environment\n\
 			variable LD_LIBRARY_PATH\n\
+  --rpath-prefix PREFIX add PREFIX to every RUNPATH and RPATH component\n\
+			unless it is a path under the /home tree\n\
   --inhibit-rpath LIST  ignore RUNPATH and RPATH information in object names\n\
 			in LIST\n\
   --argv0 STRING        use STRING as argv[0]\n\

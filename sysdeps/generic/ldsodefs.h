@@ -614,6 +614,12 @@ struct rtld_global_ro
   /* List of auditing interfaces.  */
   struct audit_ifaces *_dl_audit;
   unsigned int _dl_naudit;
+#endif
+
+  /* prefix for RPATH + RUNPATH components.  */
+  EXTERN const char *_dl_rpath_prefix;
+
+#ifdef SHARED
 };
 # define __rtld_global_attribute__
 # if IS_IN (rtld)

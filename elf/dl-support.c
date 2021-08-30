@@ -61,6 +61,9 @@ const char *_dl_inhibit_rpath;
 /* flag: don't search default directories if set. */
 int _dl_no_default_dirs = 0;
 
+/* prefix to be added to all RUNPATHs and RPATHs */
+const char *_dl_rpath_prefix = NULL;
+
 /* The map for the object we will profile.  */
 struct link_map *_dl_profile_map;
 
