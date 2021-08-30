@@ -63,6 +63,11 @@ _init (int argc, char **argv, char **envp)
 	__setfpucw (__fpu_control);
     }
 
+#if defined(__arm__)
+  /* Set the default FPU mode once again it is RunFast */
+  _FPU_SETCW(_FPU_DEFAULT);
+#endif
+
   /* Save the command-line arguments.  */
   __libc_argc = argc;
   __libc_argv = argv;

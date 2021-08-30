@@ -22,7 +22,8 @@
 #if !(defined(_LIBC) && !defined(_LIBC_TEST)) && defined(__SOFTFP__)
 
 #define _FPU_RESERVED 0xffffffff
-#define _FPU_DEFAULT  0x00000000
+#define _FPU_DEFAULT    (3 << 24)
+
 typedef unsigned int fpu_control_t;
 #define _FPU_GETCW(cw) (cw) = 0
 #define _FPU_SETCW(cw) (void) (cw)
@@ -44,10 +45,11 @@ extern fpu_control_t __fpu_control;
 /* Some bits in the FPSCR are not yet defined.  They must be preserved when
    modifying the contents.  */
 #define _FPU_RESERVED	0x00086060
-#define _FPU_DEFAULT    0x00000000
+/* The default mode is RunFast */
+#define _FPU_DEFAULT   (3 << 24)
 
 /* Default + exceptions enabled.  */
-#define _FPU_IEEE	(_FPU_DEFAULT | 0x00001f00)
+#define _FPU_IEEE	0x00001f00
 
 /* Type of the control word.  */
 typedef unsigned int fpu_control_t;
