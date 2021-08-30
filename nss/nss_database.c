@@ -28,6 +28,7 @@
 #include <netdb.h>
 #include <stdio_ext.h>
 #include <string.h>
+#include <unistd.h> /* __libc_enable_secure */
 
 struct nss_database_state
 {
@@ -303,7 +304,15 @@ static bool
 nss_database_reload (struct nss_database_data *staging,
                      struct file_change_detection *initial)
 {
-  FILE *fp = fopen (_PATH_NSSWITCH_CONF, "rce");
+  const char *ext_nss_config_file = NULL;
+  if (__libc_enable_secure == 0)
+  {
+    ext_nss_config_file = getenv ("NSSWITCH_CONF_PATH");
+  }
+  /* Open config file.  */
+  FILE *fp = fopen (ext_nss_config_file ?
+    ext_nss_config_file : _PATH_NSSWITCH_CONF, "rce");
+
   if (fp == NULL)
     fp = fopen ("/usr" _PATH_NSSWITCH_CONF, "rce");
   if (fp == NULL)
