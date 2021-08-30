@@ -188,6 +188,8 @@ setting environment variables (which would be inherited by subprocesses).\n\
   --inhibit-cache       Do not use " LD_SO_CACHE "\n\
   --library-path PATH   use given PATH instead of content of the environment\n\
                         variable LD_LIBRARY_PATH\n\
+  --rpath-prefix PREFIX add PREFIX to every RUNPATH and RPATH component\n\
+			unless it is a path under the /home tree\n\
   --glibc-hwcaps-prepend LIST\n\
                         search glibc-hwcaps subdirectories in LIST\n\
   --glibc-hwcaps-mask LIST\n\
