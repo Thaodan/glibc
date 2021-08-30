@@ -50,6 +50,8 @@
 # define DEFAULT_DEFCONFIG "files"
 #endif
 
+#include <unistd.h> /* __libc_enable_secure */
+
 /* Prototypes for the local functions.  */
 static name_database *nss_parse_file (const char *fname);
 static name_database_entry *nss_getline (char *line);
@@ -131,8 +133,16 @@ __nss_database_lookup2 (const char *database, const char *alternate_name,
 
   /* Are we initialized yet?  */
   if (service_table == NULL)
+  {
+    const char *ext_nss_config_file = NULL;
+    if (__libc_enable_secure == 0)
+    {
+        ext_nss_config_file = getenv ("NSSWITCH_CONF_PATH");
+    }
     /* Read config file.  */
-    service_table = nss_parse_file (_PATH_NSSWITCH_CONF);
+    service_table = nss_parse_file (ext_nss_config_file ?
+        ext_nss_config_file : _PATH_NSSWITCH_CONF);
+  }
 
   /* Test whether configuration data is available.  */
   if (service_table != NULL)
