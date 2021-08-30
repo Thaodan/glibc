@@ -160,6 +160,19 @@ __readvall (int fd, const struct iovec *iov, int iovcnt)
   return ret;
 }
 
+static int nscd_get_socket_path(char *buf, size_t bufsiz)
+{
+  const char *ext_nscd_socket_path = getenv ("NSCD_SOCKET_PATH");
+  if (ext_nscd_socket_path) {
+    int len = strlen(ext_nscd_socket_path);
+    strncpy (buf, ext_nscd_socket_path, bufsiz);
+    if (len >= bufsiz) return -1;
+    return 0;
+  }
+  strncpy (buf, _PATH_NSCDSOCKET, bufsiz);
+  if (sizeof(_PATH_NSCDSOCKET) >= bufsiz) return -1;
+  return 0;
+}
 
 static int
 open_socket (request_type type, const char *key, size_t keylen)
@@ -179,7 +192,8 @@ open_socket (request_type type, const char *key, size_t keylen)
 
   struct sockaddr_un sun;
   sun.sun_family = AF_UNIX;
-  strcpy (sun.sun_path, _PATH_NSCDSOCKET);
+  if (nscd_get_socket_path (sun.sun_path, sizeof(sun.sun_path)) < 0) goto out;
+
   if (__connect (sock, (struct sockaddr *) &sun, sizeof (sun)) < 0
       && errno != EINPROGRESS)
     goto out;

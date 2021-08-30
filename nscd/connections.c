@@ -477,6 +477,20 @@ fail:
   return 0;
 }
 
+int __nscd_get_socket_path(char *buf, size_t bufsiz)
+{
+  const char *ext_nscd_socket_path = getenv ("NSCD_SOCKET_PATH");
+  if (ext_nscd_socket_path) {
+    int len = strlen(ext_nscd_socket_path);
+    strncpy (buf, ext_nscd_socket_path, bufsiz);
+    if (len >= bufsiz) return -1;
+    return 0;
+  }
+  strncpy (buf, _PATH_NSCDSOCKET, bufsiz);
+  if (sizeof(_PATH_NSCDSOCKET) >= bufsiz) return -1;
+  return 0;
+}
+
 
 /* Initialize database information structures.  */
 void
@@ -788,15 +802,20 @@ cannot create read-only descriptor for \"%s\"; no mmap"),
   /* Bind a name to the socket.  */
   struct sockaddr_un sock_addr;
   sock_addr.sun_family = AF_UNIX;
-  strcpy (sock_addr.sun_path, _PATH_NSCDSOCKET);
+  if (__nscd_get_socket_path (sock_addr.sun_path, sizeof(sock_addr.sun_path)) < 0)
+    {
+      dbg_log ("Path to nscd socket is too long");
+      exit (1);
+    }
+
   if (bind (sock, (struct sockaddr *) &sock_addr, sizeof (sock_addr)) < 0)
     {
-      dbg_log ("%s: %s", _PATH_NSCDSOCKET, strerror (errno));
+      dbg_log ("%s: %s", sock_addr.sun_path, strerror (errno));
       do_exit (errno == EACCES ? 4 : 1, 0, NULL);
     }
 
   /* Set permissions for the socket.  */
-  chmod (_PATH_NSCDSOCKET, DEFFILEMODE);
+  chmod (sock_addr.sun_path, DEFFILEMODE);
 
   /* Set the socket up to accept connections.  */
   if (listen (sock, SOMAXCONN) < 0)

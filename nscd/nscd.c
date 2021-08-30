@@ -134,6 +134,8 @@ static struct argp argp =
 static bool get_stats;
 static int parent_fd = -1;
 
+extern int __nscd_get_socket_path(char *buf, size_t bufsiz);
+
 int
 main (int argc, char **argv)
 {
@@ -290,7 +292,11 @@ main (int argc, char **argv)
   signal (SIGPIPE, SIG_IGN);
 
   /* Cleanup files created by a previous 'bind'.  */
-  unlink (_PATH_NSCDSOCKET);
+  {
+    struct sockaddr_un addr;
+    if (__nscd_get_socket_path (addr.sun_path, sizeof(addr.sun_path)) >= 0)
+      unlink (addr.sun_path);
+  }
 
 #ifdef HAVE_INOTIFY
   /* Use inotify to recognize changed files.  */
@@ -528,8 +534,12 @@ nscd_open_socket (void)
     return -1;
 
   addr.sun_family = AF_UNIX;
-  assert (sizeof (addr.sun_path) >= sizeof (_PATH_NSCDSOCKET));
-  strcpy (addr.sun_path, _PATH_NSCDSOCKET);
+  if (__nscd_get_socket_path (addr.sun_path, sizeof(addr.sun_path)) < 0)
+    {
+      close (sock);
+      return -1;
+    }
+
   if (connect (sock, (struct sockaddr *) &addr, sizeof (addr)) < 0)
     {
       close (sock);
@@ -544,10 +554,13 @@ nscd_open_socket (void)
 void
 termination_handler (int signum)
 {
+  struct sockaddr_un addr;
+
   close_sockets ();
 
   /* Clean up the file created by 'bind'.  */
-  unlink (_PATH_NSCDSOCKET);
+  if (__nscd_get_socket_path (addr.sun_path, sizeof(addr.sun_path)) >= 0)
+    unlink (addr.sun_path);
 
   /* Clean up pid file.  */
   unlink (_PATH_NSCDPID);
