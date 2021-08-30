@@ -1119,6 +1119,7 @@ dl_main (const ElfW(Phdr) *phdr,
 
   if (*user_entry == (ElfW(Addr)) ENTRY_POINT)
     {
+      char *forced_argv0 = NULL;
       /* Ho ho.  We are not the program interpreter!  We are the program
 	 itself!  This means someone ran ld.so as a command.  Well, that
 	 might be convenient to do sometimes.  We support it by
@@ -1206,6 +1207,14 @@ dl_main (const ElfW(Phdr) *phdr,
 	    _dl_argc -= 2;
 	    _dl_argv += 2;
 	  }
+	else if (! strcmp (_dl_argv[1], "--argv0") && _dl_argc > 2)
+	  {
+	    forced_argv0 = _dl_argv[2];
+
+	    _dl_skip_args += 2;
+	    _dl_argc -= 2;
+	    _dl_argv += 2;
+	  }
 	else
 	  break;
 
@@ -1235,6 +1244,7 @@ of this helper program; chances are you did not intend to run this program.\n\
 			variable LD_LIBRARY_PATH\n\
   --inhibit-rpath LIST  ignore RUNPATH and RPATH information in object names\n\
 			in LIST\n\
+  --argv0 STRING        use STRING as argv[0]\n\
   --audit LIST          use objects named in LIST as auditors\n\
   --preload LIST        preload objects named in LIST\n");
 
@@ -1286,6 +1296,8 @@ of this helper program; chances are you did not intend to run this program.\n\
 			  __RTLD_OPENEXEC, LM_ID_BASE);
 	  rtld_timer_stop (&load_time, start);
 	}
+
+      if (forced_argv0 != NULL) _dl_argv[0] = forced_argv0;
 
       /* Now the map for the main executable is available.  */
       main_map = GL(dl_ns)[LM_ID_BASE]._ns_loaded;
