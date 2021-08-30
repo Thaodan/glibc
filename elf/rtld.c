@@ -1375,6 +1375,13 @@ dl_main (const ElfW(Phdr) *phdr,
 	    --_dl_argc;
 	    ++_dl_argv;
 	  }
+	else if (! strcmp (_dl_argv[1], "--nodefaultdirs")
+		 && _dl_argc > 2)
+	  {
+	    GLRO(dl_no_default_dirs) = 1;
+	    --_dl_argc;
+	    ++_dl_argv;
+	  }
 	else if (! strcmp (_dl_argv[1], "--library-path")
 		 && _dl_argc > 2)
 	  {

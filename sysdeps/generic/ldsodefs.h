@@ -646,6 +646,8 @@ struct rtld_global_ro
 
   EXTERN enum dso_sort_algorithm _dl_dso_sort_algo;
 
+  EXTERN int _dl_no_default_dirs;
+
 #ifdef SHARED
   /* We add a function table to _rtld_global which is then used to
      call the function instead of going through the PLT.  The result
