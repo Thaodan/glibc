@@ -305,6 +305,8 @@ nss_database_reload (struct nss_database_data *staging,
 {
   FILE *fp = fopen (_PATH_NSSWITCH_CONF, "rce");
   if (fp == NULL)
+    fp = fopen ("/usr" _PATH_NSSWITCH_CONF, "rce");
+  if (fp == NULL)
     switch (errno)
       {
       case EACCES:
